@@ -88,8 +88,14 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     lowMemory @63;
     stockAeb @64;
     ldw @65;
-    turningIndicatorOn @66;
-    lkasButtonOff @67;
+    carUnrecognized @66;
+    radarCommIssue @67;
+    driverMonitorLowAcc @68;
+    lkasButtonOff @69;
+    rightLCAbsm @70;
+    leftLCAbsm @71;
+    preventLCA @72;
+    turningIndicatorOn @73;
   }
 }
 
@@ -348,6 +354,7 @@ struct CarParams {
   tireStiffnessRear @24 :Float32;    # [N/rad] rear tire coeff of stiff
 
   longitudinalTuning @25 :LongitudinalPIDTuning;
+  lateralParams @48 :LateralParams;
   lateralTuning :union {
     pid @26 :LateralPIDTuning;
     indi @27 :LateralINDITuning;
@@ -374,10 +381,16 @@ struct CarParams {
   carFw @44 :List(CarFw);
   radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
   communityFeature @46: Bool;  # true if a community maintained feature is detected
-  mdpsBus @48: Int8;
-  sasBus @49: Int8;
-  sccBus @50: Int8;
-  autoLcaEnabled @51: Int8;
+  fingerprintSource @49: FingerprintSource;
+  mdpsBus @50: Int8;
+  sasBus @51: Int8;
+  sccBus @52: Int8;
+  autoLcaEnabled @53: Int8;
+
+  struct LateralParams {
+    torqueBP @0 :List(Int32);
+    torqueV @1 :List(Int32);
+  }
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
@@ -419,11 +432,11 @@ struct CarParams {
 
   enum SafetyModel {
     silent @0;
-    honda @1;
+    hondaNidec @1;
     toyota @2;
     elm327 @3;
     gm @4;
-    hondaBosch @5;
+    hondaBoschGiraffe @5;
     ford @6;
     cadillac @7;
     hyundai @8;
@@ -437,7 +450,9 @@ struct CarParams {
     toyotaIpas @16;
     allOutput @17;
     gmAscm @18;
-    noOutput @19;  # like silent but with silent CAN TXs
+    noOutput @19;  # like silent but without silent CAN TXs
+    hondaBoschHarness @20;
+    volkswagenPq @21;
   }
 
   enum SteerControlType {
@@ -453,7 +468,9 @@ struct CarParams {
 
   struct CarFw {
     ecu @0 :Ecu;
-    fwVersion @1 :Text;
+    fwVersion @1 :Data;
+    address @2: UInt32;
+    subAddress @3: UInt8;
   }
 
   enum Ecu {
@@ -461,5 +478,17 @@ struct CarParams {
     esp @1;
     fwdRadar @2;
     fwdCamera @3;
+    engine @4;
+    unknown @5;
+
+    # Toyota only
+    dsu @6;
+    apgs @7;
+  }
+
+  enum FingerprintSource {
+    can @0;
+    fw @1;
+    fixed @2;
   }
 }

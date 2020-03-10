@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_can2_parser, get_camera_parser
-from selfdrive.car.hyundai.values import ECU, ECU_FINGERPRINT, CAR, FINGERPRINTS
+from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -37,13 +37,12 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 3.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), vin="", has_relay=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
-    ret.carVin = vin
     ret.isPandaBlack = has_relay
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
@@ -118,23 +117,38 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+<<<<<<< HEAD
     elif candidate in [CAR.IONIQ, CAR.KIA_NIRO]:
       ret.lateralTuning.pid.kf = 0.00006
+=======
+    elif candidate == CAR.IONIQ:
+      ret.lateralTuning.pid.kf = 0.00004
+>>>>>>> 9a6fe6071d53d1d4bf5db210930ffd934eb08175
       ret.mass = 1275. + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.steerRatio = 10.1   #Spec
+      tire_stiffness_factor = 0.385
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13], [0.009]]
+      ret.steerRateCost = 0.8
+    elif candidate == CAR.KONA_EV:
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.mass = 1685. + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 13.73   #Spec
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.IONIQ_EV_LTD:
-      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kf = 0.00004
       ret.mass = 1490. + STD_CARGO_KG   #weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
-      ret.steerRatio = 13.73   #Spec
+      ret.steerRatio = 10.1   #Tuned
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13], [0.009]]
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
+      ret.steerRateCost = 0.8 
     elif candidate == CAR.KIA_FORTE:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
@@ -147,9 +161,9 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
 
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kpV = [2.6, 1.8, 0.9]
+    ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
     ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.26, 0.18]
+    ret.longitudinalTuning.kiV = [0.18, 0.12]
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]
 
@@ -174,18 +188,20 @@ class CarInterface(CarInterfaceBase):
     ret.steerMaxV = [1.0]
     ret.gasMaxBP = [0.]
     ret.gasMaxV = [0.5]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [1.]
+    ret.brakeMaxBP = [0., 20.]
+    ret.brakeMaxV = [1., 0.8]
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     ret.openpilotLongitudinalControl = True
 
     ret.stoppingControl = True
     ret.startAccel = 0.0
 
-    ret.mdpsBus = 1 if 593 in fingerprint[1] else 0
-    ret.sasBus = 1 if 688 in fingerprint[1] else 0
-    ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] else 2 if 1056 in fingerprint[2] else -1
+    # ignore CAN2 address if L-CAN on the same BUS
+    ret.mdpsBus = 1 if 593 in fingerprint[1] and 1296 not in fingerprint[1] else 0
+    ret.sasBus = 1 if 688 in fingerprint[1] and 1296 not in fingerprint[1] else 0
+    ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] and 1296 not in fingerprint[1] \
+                                                                     else 2 if 1056 in fingerprint[2] else -1
     ret.autoLcaEnabled = 0
 
     return ret
@@ -274,9 +290,9 @@ class CarInterface(CarInterfaceBase):
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:	
-      self.low_speed_alert = True	
-    if ret.vEgo > (self.CP.minSteerSpeed + 0.7):	
+    if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:
+      self.low_speed_alert = True
+    if ret.vEgo > (self.CP.minSteerSpeed + 0.7):
       self.low_speed_alert = False
 
     # turning indicator alert logic
@@ -298,7 +314,7 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == GearShifter.reverse:
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if self.CS.steer_error:
+    if self.CS.steer_error or abs(self.CS.angle_steers) > 90.:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
@@ -320,6 +336,11 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('turningIndicatorOn', [ET.WARNING]))
     if self.lkas_button_alert:
       events.append(create_event('lkasButtonOff', [ET.WARNING]))
+    #TODO Varible for min Speed for LCA
+    if ret.rightBlinker and ret.lcaRight and self.CS.v_ego > (45 * CV.MPH_TO_MS):
+      events.append(create_event('rightLCAbsm', [ET.WARNING]))
+    if ret.leftBlinker and ret.lcaLeft and self.CS.v_ego > (45 * CV.MPH_TO_MS):
+      events.append(create_event('leftLCAbsm', [ET.WARNING]))
 
     ret.events = events
 
@@ -330,10 +351,8 @@ class CarInterface(CarInterfaceBase):
     return ret.as_reader()
 
   def apply(self, c):
-    
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                                c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
                                c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
-
     self.frame += 1
     return can_sends

@@ -3,12 +3,10 @@ HKG Community information
 
 This is the "Community fork" for Kia, Hyundai and Genesis.
 it is a fork of comma's openpilot: https://github.com/commaai/openpilot. It is open source and inherits MIT license.  By installing this software you accept all responsibility for anything that might occur while you use it.  All contributors to this fork are not liable.  <b>Use at your own risk.</b>
-I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url)
 
-The port was started by Andrew Frahn of Emmertex, ku7 tech on youtube
+<b>The port was started by Andrew Frahn of Emmertex, ku7 tech on youtube
 https://www.youtube.com/c/ku7tech
-
-
+I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url)</b>
 
 Changes:
 ------
@@ -50,6 +48,7 @@ To add new car or fingerprint, please make Pull Requset or send me the fingerpri
 | Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph         |
 | Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
+| Kia       | Forte 2019<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
 | Kia       | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph        |
 | Kia       | Optima 2019<sup>5</sup>            | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018<sup>5</sup>           | All               | Stock            | 0mph               | 0mph         |
